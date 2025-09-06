@@ -1550,7 +1550,6 @@ func (p *HttpProxy) replaceHtmlParams(body string, lure_url string, params *map[
 
 func (p *HttpProxy) replaceHeaderWithOriginal(req *http.Request, header string) {
 	if _, ok := req.Header[header]; ok {
-		// The browser might send the same header more than once
 		Hmap := req.Header.Values(header)
 		for i, H := range Hmap {
 			Hmap[i] = p.replaceStringWithOriginal(H)
@@ -1561,7 +1560,6 @@ func (p *HttpProxy) replaceHeaderWithOriginal(req *http.Request, header string) 
 
 func (p *HttpProxy) replaceHeaderWithPhished(resp *http.Response, header string) {
 	if _, ok := resp.Header[header]; ok {
-		// The server might send the same header more than once
 		Hmap := resp.Header.Values(header)
 		for i, H := range Hmap {
 			Hmap[i] = p.replaceStringWithPhished(H)
